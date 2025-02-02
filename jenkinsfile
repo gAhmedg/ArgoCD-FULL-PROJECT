@@ -12,12 +12,12 @@ environment {
     agent any
 
      stages {
-            stage('Verify Branch') {
-            steps {
-                echo "$GIT_BRANCH"
-            }
+            // stage('Verify Branch') {
+            // steps {
+            //     echo "$GIT_BRANCH"
+            // }
         
-            }
+            // }
    
         // stage('Build and Push Docker Image') {
         //     steps {
@@ -48,18 +48,18 @@ environment {
 }
 
  post {
-        success {
-            script {
-                echo 'Docker image build ,push and Deploy succeeded '
+        // success {
+        //     script {
+        //         echo 'Docker image build ,push and Deploy succeeded '
                 
-            }
-        }
-        failure {
-            script {
-                echo 'Docker image build ,push and Deploy failed'
+        //     }
+        // }
+        // failure {
+        //     script {
+        //         echo 'Docker image build ,push and Deploy failed'
                
-            }
-        }
+        //     }
+        // }
     }
 
 }
