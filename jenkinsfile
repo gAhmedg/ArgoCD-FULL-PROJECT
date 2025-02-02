@@ -33,7 +33,7 @@ environment {
     stage('Deploy in kubernetes') {
             steps {                                     
                    
-                 sh 'kubectl apply -f newdeployment.yaml 
+                 sh 'kubectl apply -f newdeployment.yaml' 
             // withKubeCredentials(kubectlCredentials: [[caCertificate: '', clusterName: '', contextName: '', credentialsId: '4', namespace: 'ahmedgomaa', serverUrl: 'https://api.ocp-training.ivolve-test.com:6443']]) {    
             //     sh "sed 's|image:.*|image: ${imageName}:${BUILD_NUMBER}|' ${yamlfiles} > python-app.yml"
                  
