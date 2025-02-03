@@ -18,12 +18,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: build_images  # Ensure this job runs only after 'build_images' is complete
     steps:
-      - name: checkout
-        uses: actions/checkout@v4
       - name: push image to Docker Hub
-        run: echo "${{ secrets.DOCKER_HUB_TOKEN }}" | docker login -u "algn48" --password-stdin
+        run: docker login -u algn48 -p ${{ secrets.DOCKERHUB_TOKEN }}
       - name: push image to Docker Hub
         run: |
-          
           docker push algn48/node-todo:latest
       
