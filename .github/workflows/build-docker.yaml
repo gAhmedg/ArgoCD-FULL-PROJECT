@@ -1,0 +1,24 @@
+name: Build and Publish image to Docker Hub
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'api/Dockerfile'
+      - 'front-end-nextjs/Dockerfile'
+
+jobs:
+  publish_images:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: build image
+        run: |
+          docker build  -t algn48/node-todo:latest
+          
+      - name: push image to docker hub
+        run: |
+          docker login -u algn48 -p ${{ secrets.DOCKER_HUB_TOKEN }}
+          docker push algn48/node-todo:latest
+          
