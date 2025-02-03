@@ -12,7 +12,7 @@ jobs:
         uses: actions/checkout@v4
       - name: build image
         run: |
-          docker build  -t algn48/node-todo:latest
+          docker build  -t algn48/node-todo:latest .
           
       - name: push image to docker hub
         run: |
