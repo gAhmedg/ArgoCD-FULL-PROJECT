@@ -13,19 +13,14 @@ jobs:
       - name: build image
         run: |
           docker build -t algn48/node-todo:latest .
+
+  publish_images:
+    runs-on: ubuntu-latest
+    needs: build_images  # Ensure this job runs only after 'build_images' is complete
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
       - name: push image to Docker Hub
         run: |
-          docker login -u gomaaa44@gmail,com -p ${{ secrets.DOCKERHUB_TOKEN }}
+          echo "${{ secrets.DOCKER_HUB_TOKEN }}" | docker login -u "algn48" --password-stdin
           docker push algn48/node-todo:latest
-
-
-  # publish_images:
-  #   runs-on: ubuntu-latest
-  #   needs: build_images  # Ensure this job runs only after 'build_images' is complete
-  #   steps:
-  #     - name: checkout
-  #       uses: actions/checkout@v4
-  #     - name: push image to Docker Hub
-  #       run: |
-  #         docker login -u gomaaa44@gmail,com -p ${{ secrets.DOCKERHUB_TOKEN }}
-  #         docker push algn48/node-todo:latest
