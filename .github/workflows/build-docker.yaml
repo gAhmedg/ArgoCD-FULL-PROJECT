@@ -5,7 +5,7 @@ on:
       - main
 
 jobs:
-  publish_images:
+  build_images:
     runs-on: ubuntu-latest
     steps:
       - name: checkout
@@ -14,6 +14,11 @@ jobs:
         run: |
           docker build  -t algn48/node-todo:latest .
           
+  publish_images:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
       - name: push image to docker hub
         run: |
           docker login -u algn48 -p ${{ secrets.DOCKER_HUB_TOKEN }}
