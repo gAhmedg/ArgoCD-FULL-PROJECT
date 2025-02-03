@@ -21,6 +21,9 @@ jobs:
       - name: checkout
         uses: actions/checkout@v4
       - name: push image to Docker Hub
+        run: echo "${{ secrets.DOCKER_HUB_TOKEN }}" | docker login -u "algn48" --password-stdin
+      - name: push image to Docker Hub
         run: |
-          echo "${{ secrets.DOCKER_HUB_TOKEN }}" | docker login -u "algn48" --password-stdin
+          
           docker push algn48/node-todo:latest
+      
