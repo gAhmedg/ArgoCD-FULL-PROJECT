@@ -225,11 +225,20 @@ jobs:
     needs: [build-and-push-images, update-argocd]
     if: always()
     steps:
-      - name: Generate MegaLinter Report URL
-        id: report_url
+      - name: Get Artifact ID and Download URL
+        id: artifact_url
         run: |
-          ARTIFACT_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts"
-          echo "LINTER_REPORT_URL=${ARTIFACT_URL}" >> $GITHUB_ENV
+          ARTIFACT_ID=$(curl -s \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts" | \
+            jq -r '.artifacts[0].id')
+          
+          ARTIFACT_DOWNLOAD_URL=$(curl -s \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/artifacts/$ARTIFACT_ID/zip" | \
+            jq -r '.url')
+
+          echo "LINTER_REPORT_URL=$ARTIFACT_DOWNLOAD_URL" >> $GITHUB_ENV
 
       - name: Send Teams Notification on Success
         if: success()
@@ -254,3 +263,4 @@ jobs:
             "title": "❌ Build & Deployment Failed",
             "text": "Check GitHub Actions for details.\n**Triggered by:** ${{ github.actor }}\n📄 [🔗 MegaLinter Report]('${{ env.LINTER_REPORT_URL }}')"
           }' ${{ secrets.TEAMS_WEBHOOK_URL }}
+        
