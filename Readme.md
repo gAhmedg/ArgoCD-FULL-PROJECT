@@ -60,16 +60,28 @@ In your GitHub repository settings, add the following **secrets**:
 
 ## 📂 Folder Structure
 ```
-📦 node-todo
+CD-REPO
+📦 argocd
 ├── 📂 k8s                 # Kubernetes manifests
 │   ├── deployment.yaml    # Kubernetes deployment definition
 │   ├── service.yaml       # Kubernetes service definition
-├── 📄 Dockerfile          # Docker build file
-├── 📄 .github/workflows   # GitHub Actions workflow
-│   ├── ci-cd.yml         # Workflow automation
-├── 📄 README.md           # Documentation
-```
 
+```
+```
+CI-REPO
+📦 node-todo
+├── 📂 .github
+│ ├── 📂 workflows
+│ │ ├── ci-cd.yml # GitHub Actions workflow for CI/CD
+├── 📄 Dockerfile # Docker build file
+├── 📄 README.md # Documentation
+├── 📂 node_modules # Project dependencies
+├── 📄 package.json # Project metadata and dependencies
+├── 📂 repo # Repository-related files
+├── 📂 spec # Test specifications
+├── 📂 src # Source code
+├── 📄 yarn.lock # Dependency lock file
+```
 ## 🎯 ArgoCD Deployment File Example (`k8s/deployment.yaml`)
 ```yaml
 apiVersion: apps/v1
