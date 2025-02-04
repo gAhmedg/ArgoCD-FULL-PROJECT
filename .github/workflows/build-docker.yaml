@@ -225,32 +225,19 @@ jobs:
     needs: [build-and-push-images, update-argocd]
     if: always()
     steps:
-      - name: Get Artifact ID and Download URL
-        id: artifact_url
-        run: |
-          ARTIFACT_ID=$(curl -s \
-            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts" | \
-            jq -r '.artifacts[0].id')
-          
-          ARTIFACT_DOWNLOAD_URL=$(curl -s \
-            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/${{ github.repository }}/actions/artifacts/$ARTIFACT_ID/zip" | \
-            jq -r '.url')
-
-          echo "LINTER_REPORT_URL=$ARTIFACT_DOWNLOAD_URL" >> $GITHUB_ENV
-
       - name: Send Teams Notification on Success
         if: success()
         run: |
+          ARTIFACT_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           curl -H 'Content-Type: application/json' -d '{
             "@type": "MessageCard",
             "@context": "https://schema.org/extensions",
             "summary": "GitHub Actions Workflow Completed",
             "themeColor": "00FF00",
             "title": "✅ Build & Deployment Successful",
-            "text": "**Repository:** algn48/node-todo\n**New Tag:** ${{ env.new_tag }}\n[View Docker Hub](https://hub.docker.com/r/algn48/node-todo)\n📄 [🔗 MegaLinter Report]('${{ env.LINTER_REPORT_URL }}')"
+            "text": "**Repository:** algn48/node-todo\n**New Tag:** ${{ env.new_tag }}\n[View Docker Hub](https://hub.docker.com/r/algn48/node-todo)\n[🔗 Download Linter Report]('"$ARTIFACT_URL"')"
           }' ${{ secrets.TEAMS_WEBHOOK_URL }}
+
 
       - name: Send Teams Notification on Failure
         if: failure()
@@ -261,6 +248,5 @@ jobs:
             "summary": "GitHub Actions Workflow Failed",
             "themeColor": "FF0000",
             "title": "❌ Build & Deployment Failed",
-            "text": "Check GitHub Actions for details.\n**Triggered by:** ${{ github.actor }}\n📄 [🔗 MegaLinter Report]('${{ env.LINTER_REPORT_URL }}')"
+            "text": "Check GitHub Actions for details.\n**Triggered by:** ${{ github.actor }}"
           }' ${{ secrets.TEAMS_WEBHOOK_URL }}
-        
