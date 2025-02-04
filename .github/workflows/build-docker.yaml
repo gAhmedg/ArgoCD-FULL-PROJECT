@@ -38,6 +38,12 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-and-push-images
     steps:
+      - name: Get Latest Tag from Docker Hub and Increment
+        id: get_tag
+        run: |
+          LATEST_TAG=$(curl -s "https://hub.docker.com/v2/repositories/algn48/node-todo/tags/?page_size=1" | jq -r '.results[0].name' | grep -Eo '[0-9]+' || echo 0)
+          NEW_TAG=$((LATEST_TAG + 1))
+          echo "new_tag=$NEW_TAG" >> $GITHUB_ENV
       - name: Create Summary for GitHub Actions
         run: |
           echo "## ✅ Docker Image Built and Pushed Successfully" >> $GITHUB_STEP_SUMMARY
@@ -50,12 +56,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: generate-summary
     steps:
-      - name: Get Latest Tag from Docker Hub and Increment
-        id: get_tag
-        run: |
-          LATEST_TAG=$(curl -s "https://hub.docker.com/v2/repositories/algn48/node-todo/tags/?page_size=1" | jq -r '.results[0].name' | grep -Eo '[0-9]+' || echo 0)
-          NEW_TAG=$((LATEST_TAG + 1))
-          echo "new_tag=$NEW_TAG" >> $GITHUB_ENV
       - name: Clone Target Repository (`argocd-example-apps`)
         env:
           GH_TOKEN: ${{ secrets.GH_PAT }}
