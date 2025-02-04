@@ -46,7 +46,8 @@ jobs:
       - name: Push Image to Docker Hub
         run: |
           docker ps -a
-          docker push algn48/node-todo:${{NEW_TAG}}
+          docker tag algn48/node-todo:latest algn48/node-todo:$NEW_TAG
+          docker push algn48/node-todo:$NEW_TAG
 
   generate-summary:
     runs-on: ubuntu-latest
