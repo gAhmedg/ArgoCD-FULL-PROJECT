@@ -42,7 +42,7 @@ jobs:
         id: get_tag
         run: |
           LATEST_TAG=$(curl -s "https://hub.docker.com/v2/repositories/algn48/node-todo/tags/?page_size=1" | jq -r '.results[0].name' | grep -Eo '[0-9]+' || echo 0)
-          NEW_TAG=$((LATEST_TAG + 1))
+          NEW_TAG=$((LATEST_TAG ))
           echo "new_tag=$NEW_TAG" >> $GITHUB_ENV
       - name: Create Summary for GitHub Actions
         run: |
@@ -69,7 +69,7 @@ jobs:
         id: get_tag
         run: |
           LATEST_TAG=$(curl -s "https://hub.docker.com/v2/repositories/algn48/node-todo/tags/?page_size=1" | jq -r '.results[0].name' | grep -Eo '[0-9]+' || echo 0)
-          NEW_TAG=$((LATEST_TAG + 1))
+          NEW_TAG=$((LATEST_TAG ))
           echo "new_tag=$NEW_TAG" >> $GITHUB_ENV
 
       - name: Update Deployment File in `argocd-example-apps`
