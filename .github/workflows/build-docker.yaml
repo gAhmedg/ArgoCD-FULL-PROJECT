@@ -228,16 +228,14 @@ jobs:
       - name: Send Teams Notification on Success
         if: success()
         run: |
-          ARTIFACT_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           curl -H 'Content-Type: application/json' -d '{
             "@type": "MessageCard",
             "@context": "https://schema.org/extensions",
             "summary": "GitHub Actions Workflow Completed",
             "themeColor": "00FF00",
             "title": "✅ Build & Deployment Successful",
-            "text": "**Repository:** algn48/node-todo\n**New Tag:** ${{ env.new_tag }}\n[View Docker Hub](https://hub.docker.com/r/algn48/node-todo)\n[🔗 Download Linter Report]('"$ARTIFACT_URL"')"
+            "text": "**Repository:** algn48/node-todo\n**New Tag:** ${{ env.new_tag }}\n**Triggered by:** ${{ github.actor }}\n[View Docker Hub](https://hub.docker.com/r/algn48/node-todo)"
           }' ${{ secrets.TEAMS_WEBHOOK_URL }}
-
 
       - name: Send Teams Notification on Failure
         if: failure()
