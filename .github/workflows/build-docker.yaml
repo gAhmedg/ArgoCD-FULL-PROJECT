@@ -32,7 +32,6 @@ jobs:
       - name: Push Image to Docker Hub
         run: |
           docker tag algn48/node-todo:latest algn48/node-todo:${{ env.new_tag }}
-          docker push algn48/node-todo:latest
           docker push algn48/node-todo:${{ env.new_tag }}
 
   generate-summary:
