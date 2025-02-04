@@ -1,62 +1,261 @@
-name: CI/CD Pipeline
+name: Build and Publish Image to Docker Hub
 
 on:
   push:
     branches:
       - main
       - ahmedHamada
-  pull_request:
-    branches:
-      - main
+
+permissions:
+  contents: write
+
+env:
+  APPLY_FIXES: none
+  APPLY_FIXES_EVENT: pull_request
+  APPLY_FIXES_MODE: commit
+
+concurrency:
+  group: ${{ github.ref }}-${{ github.workflow }}
+  cancel-in-progress: true
 
 jobs:
-  lint:
+  pre-pull-image:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Pull MegaLinter image
+        run: docker pull oxsecurity/megalinter:v8.4.2
+
+  megalinter:
+    name: MegaLinter
+    runs-on: ubuntu-latest
+    needs: pre-pull-image
+    continue-on-error: true  # Allow job to continue even if there is an error
+
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PAT || secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
       - name: Run MegaLinter
-        uses: oxsecurity/megalinter@latest
+        uses: oxsecurity/megalinter@v8
+        id: ml
+        continue-on-error: true  # Allow this step to continue even if it fails
         env:
+          VALIDATE_ALL_CODEBASE: "true"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload MegaLinter reports
-        uses: actions/upload-artifact@v3
+      - name: Ensure MegaLinter Reports Directory Exists
+        run: mkdir -p megalinter-reports
+        shell: bash
+
+      - name: Archive production artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: megalinter-reports
+          name: MegaLinter reports
+          include-hidden-files: "true"
           path: |
-            megalinter-reports/
+            megalinter-reports
             mega-linter.log
+
+      - name: Create Pull Request with applied fixes
+        uses: peter-evans/create-pull-request@v6
+        id: cpr
+        if: >-
+          steps.ml.outputs.has_updated_sources == 1 &&
+          (
+            env.APPLY_FIXES_EVENT == 'all' ||
+            env.APPLY_FIXES_EVENT == github.event_name
+          ) &&
+          env.APPLY_FIXES_MODE == 'pull_request' &&
+          (
+            github.event_name == 'push' ||
+            github.event.pull_request.head.repo.full_name == github.repository
+          ) &&
+          !contains(github.event.head_commit.message, 'skip fix')
+        with:
+          token: ${{ secrets.PAT || secrets.GITHUB_TOKEN }}
+          commit-message: "[MegaLinter] Apply linters automatic fixes"
+          title: "[MegaLinter] Apply linters automatic fixes"
+          labels: bot
+
+      - name: Create PR output
+        if: >-
+          steps.ml.outputs.has_updated_sources == 1 &&
+          (
+            env.APPLY_FIXES_EVENT == 'all' ||
+            env.APPLY_FIXES_EVENT == github.event_name
+          ) &&
+          env.APPLY_FIXES_MODE == 'pull_request' &&
+          (
+            github.event_name == 'push' ||
+            github.event.pull_request.head.repo.full_name == github.repository
+          ) &&
+          !contains(github.event.head_commit.message, 'skip fix')
+        run: |
+          echo "PR Number - ${{ steps.cpr.outputs.pull-request-number }}"
+          echo "PR URL - ${{ steps.cpr.outputs.pull-request-url }}"
+
+      - name: Prepare commit
+        if: >-
+          steps.ml.outputs.has_updated_sources == 1 &&
+          (
+            env.APPLY_FIXES_EVENT == 'all' ||
+            env.APPLY_FIXES_EVENT == github.event_name
+          ) &&
+          env.APPLY_FIXES_MODE == 'commit' &&
+          github.ref != 'refs/heads/main' &&
+          (
+            github.event_name == 'push' ||
+            github.event.pull_request.head.repo.full_name == github.repository
+          ) &&
+          !contains(github.event.head_commit.message, 'skip fix')
+        run: sudo chown -Rc $UID .git/
+
+      - name: Commit and push applied linter fixes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        if: >-
+          steps.ml.outputs.has_updated_sources == 1 &&
+          (
+            env.APPLY_FIXES_EVENT == 'all' ||
+            env.APPLY_FIXES_EVENT == github.event_name
+          ) &&
+          env.APPLY_FIXES_MODE == 'commit' &&
+          github.ref != 'refs/heads/main' &&
+          (
+            github.event_name == 'push' ||
+            github.event.pull_request.head.repo.full_name == github.repository
+          ) &&
+          !contains(github.event.head_commit.message, 'skip fix')
+        with:
+          branch: >-
+            ${{
+              github.event.pull_request.head.ref ||
+              github.head_ref ||
+              github.ref
+            }}
+          commit_message: "[MegaLinter] Apply linters fixes"
+          commit_user_name: megalinter-bot
+          commit_user_email: nicolas.vuillamy@ox.security
+
+  build-and-push-images:
+    runs-on: ubuntu-latest
+    needs: megalinter
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Enable Docker BuildKit
+        run: echo '{"experimental":true}' > ~/.docker/config.json
+
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-docker-${{ hashFiles('**/Dockerfile') }}
+          restore-keys: |
+            ${{ runner.os }}-docker-
+
+      - name: Build Docker Image
+        run: |
+          docker build -t algn48/node-todo:latest .  
+
+      - name: Login to Docker Hub
+        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "algn48" --password-stdin
+
+      - name: Get Latest Tag from Docker Hub and Increment
+        id: get_tag
+        run: |
+          LATEST_TAG=$(curl -s "https://hub.docker.com/v2/repositories/algn48/node-todo/tags/?page_size=1" | jq -r '.results[0].name' | grep -Eo '[0-9]+' || echo 0)
+          NEW_TAG=$((LATEST_TAG + 1))
+          echo "new_tag=$NEW_TAG" >> $GITHUB_ENV
+
+      - name: Push Image to Docker Hub
+        run: |
+          docker tag algn48/node-todo:latest algn48/node-todo:${{ env.new_tag }}
+          docker push algn48/node-todo:${{ env.new_tag }}
 
   generate-summary:
     runs-on: ubuntu-latest
+    needs: build-and-push-images
     steps:
-      - name: Generate build summary
-        run: echo "Build summary generated!" > summary.txt
+      - name: Get Latest Tag from Docker Hub and Increment
+        id: get_tag
+        run: |
+          LATEST_TAG=$(curl -s "https://hub.docker.com/v2/repositories/algn48/node-todo/tags/?page_size=1" | jq -r '.results[0].name' | grep -Eo '[0-9]+' || echo 0)
+          NEW_TAG=$((LATEST_TAG ))
+          echo "new_tag=$NEW_TAG" >> $GITHUB_ENV
 
-      - name: Upload summary
-        uses: actions/upload-artifact@v3
-        with:
-          name: build-summary
-          path: summary.txt
+      - name: Create Summary for GitHub Actions
+        run: |
+          echo "## ✅ Docker Image Built and Pushed Successfully" >> $GITHUB_STEP_SUMMARY
+          echo "- **Repository:** algn48/node-todo" >> $GITHUB_STEP_SUMMARY
+          echo "- **Latest Tag:** latest" >> $GITHUB_STEP_SUMMARY
+          echo "- **New Incremental Tag:** ${{ env.new_tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Docker Hub URL:** [View Image](https://hub.docker.com/r/algn48/node-todo)" >> $GITHUB_STEP_SUMMARY
 
   update-argocd:
     runs-on: ubuntu-latest
+    needs: generate-summary
     steps:
-      - name: Deploy to ArgoCD
-        run: echo "Deploying to ArgoCD..."
+      - name: Clone Target Repository (`argocd-example-apps`)
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          git clone https://gAhmedg:${GH_TOKEN}@github.com/gAhmedg/argocd-example-apps.git target-repo
+          cd target-repo
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+
+      - name: Get Latest Tag from Docker Hub and Increment
+        id: get_tag
+        run: |
+          LATEST_TAG=$(curl -s "https://hub.docker.com/v2/repositories/algn48/node-todo/tags/?page_size=1" | jq -r '.results[0].name' | grep -Eo '[0-9]+' || echo 0)
+          NEW_TAG=$((LATEST_TAG ))
+          echo "new_tag=$NEW_TAG" >> $GITHUB_ENV
+
+      - name: Update Deployment File in `argocd-example-apps`
+        run: |
+          cd target-repo
+          sed -i "s|image: algn48/node-todo:.*|image: algn48/node-todo:${{ env.new_tag }}|g" k8s/deployment.yaml
+
+      - name: Commit and Push Changes to `argocd-example-apps`
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          cd target-repo
+          git add k8s/deployment.yaml
+          git commit -m "Updated deployment with new image tag: ${{ env.new_tag }}"
+          git push https://gAhmedg:${GH_TOKEN}@github.com/gAhmedg/argocd-example-apps.git main
 
   notify-teams:
     runs-on: ubuntu-latest
-    needs: [lint, generate-summary, update-argocd]
+    needs: [build-and-push-images, update-argocd]
+    if: always()
     steps:
-      - name: Get artifact download URL
+      - name: Send Teams Notification on Success
+        if: success()
         run: |
-          echo "Artifact URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts" > artifact_url.txt
+          curl -H 'Content-Type: application/json' -d '{
+            "@type": "MessageCard",
+            "@context": "https://schema.org/extensions",
+            "summary": "GitHub Actions Workflow Completed",
+            "themeColor": "00FF00",
+            "title": "✅ Build & Deployment Successful",
+            "text": "**Repository:** algn48/node-todo\n**New Tag:** ${{ env.new_tag }}\n[View Docker Hub](https://hub.docker.com/r/algn48/node-todo)"
+          }' ${{ secrets.TEAMS_WEBHOOK_URL }}
 
-      - name: Send Teams Notification
-        uses: mpetrunic/teams-notify-action@v1
-        with:
-          webhook_url: ${{ secrets.TEAMS_WEBHOOK_URL }}
-          message: "✅ CI/CD Pipeline completed! \n🔗 [Download Reports and Logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts) \n👤 Triggered by: ${{ github.actor }}"
+      - name: Send Teams Notification on Failure
+        if: failure()
+        run: |
+          curl -H 'Content-Type: application/json' -d '{
+            "@type": "MessageCard",
+            "@context": "https://schema.org/extensions",
+            "summary": "Git
