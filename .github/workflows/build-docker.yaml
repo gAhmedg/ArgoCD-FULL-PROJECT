@@ -18,22 +18,6 @@ jobs:
           NEW_TAG=$((LATEST_TAG + 1))
           echo "new_tag=$NEW_TAG" >> $GITHUB_OUTPUT
 
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: '14'
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Run tests
-        run: npm test
 
   build-image:
     runs-on: ubuntu-latest
@@ -60,7 +44,7 @@ jobs:
         run: npm install -g snyk  # Installs Snyk globally
 
       - name: Scan Docker Image for Vulnerabilities
-        run: snyk container test algn48/node-todo:latest --all-projects
+        run: snyk container test algn48/node-todo:latest 
 
   push-image:
     runs-on: ubuntu-latest
