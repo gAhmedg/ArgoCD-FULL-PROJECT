@@ -32,16 +32,16 @@ jobs:
           echo "- **New Incremental Tag:** ${{ env.new_tag }}" >> $GITHUB_STEP_SUMMARY
 
   generate-summary:
-    runs-on: ubuntu-latest
-    needs: build-and-push-images
-    steps:
-      - name: Create Summary for GitHub Actions
-        run: |
-          echo "## ✅ Docker Image Built and Pushed Successfully" >> $GITHUB_STEP_SUMMARY
-          echo "- **Repository:** algn48/node-todo" >> ${{ env.new_tag }}
-          echo "- **Latest Tag:** latest" >> $GITHUB_STEP_SUMMARY
-          echo "- **New Incremental Tag:** ${{ needs.get-latest-tag.outputs.new_tag }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Docker Hub URL:** [View Image](https://hub.docker.com/r/algn48/node-todo)" >> $GITHUB_STEP_SUMMARY
+  runs-on: ubuntu-latest
+  needs: build-and-push-images
+  steps:
+    - name: Create Summary for GitHub Actions
+      run: |
+        echo "## ✅ Docker Image Built and Pushed Successfully" >> $GITHUB_STEP_SUMMARY
+        echo "- **Repository:** algn48/node-todo" >> $GITHUB_STEP_SUMMARY
+        echo "- **Latest Tag:** latest" >> $GITHUB_STEP_SUMMARY
+        echo "- **New Incremental Tag:** ${{ env.new_tag }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Docker Hub URL:** [View Image](https://hub.docker.com/r/algn48/node-todo)" >> $GITHUB_STEP_SUMMARY
 
 
   update-argocd:
