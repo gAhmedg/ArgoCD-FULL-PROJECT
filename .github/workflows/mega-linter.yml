@@ -9,7 +9,7 @@
         branches:
           - main
           - master
-          - ahmedhamada
+        #   - ahmedHamada
     
     env:
       APPLY_FIXES: none
