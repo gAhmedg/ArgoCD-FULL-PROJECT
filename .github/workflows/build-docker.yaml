@@ -84,6 +84,7 @@ jobs:
       - name: Send success notification to Teams
         uses: 8398a7/action-slack@v3
         with:
+          status: success
           slack_webhook_url: ${{ secrets.TEAMS_WEBHOOK_URL }}
           text: "✅ The Docker image has been successfully built, tested, and pushed to Docker Hub. Deployment updates have been applied!"
 
@@ -94,5 +95,6 @@ jobs:
       - name: Send failure notification to Teams
         uses: 8398a7/action-slack@v3
         with:
+   #       status: failure
           slack_webhook_url: ${{ secrets.TEAMS_WEBHOOK_URL }}
           text: "❌ The GitHub Actions workflow has failed. Please check the logs and address the issue."
