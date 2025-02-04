@@ -18,7 +18,6 @@ jobs:
           NEW_TAG=$((LATEST_TAG + 1))
           echo "new_tag=$NEW_TAG" >> $GITHUB_OUTPUT
 
-
   build-image:
     runs-on: ubuntu-latest
     needs: get-latest-tag
@@ -32,19 +31,6 @@ jobs:
       - name: Build Docker Image
         run: |
           docker build -t algn48/node-todo:latest -t algn48/node-todo:${{ needs.get-latest-tag.outputs.new_tag }} .
-
-  # scan-image:
-  #   runs-on: ubuntu-latest
-  #   needs: build-image
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
-
-  #     - name: Install Snyk
-  #       run: npm install -g snyk  # Installs Snyk globally
-
-  #     - name: Scan Docker Image for Vulnerabilities
-  #       run: snyk container test algn48/node-todo:latest 
 
   push-image:
     runs-on: ubuntu-latest
@@ -64,7 +50,7 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      
+
       - name: Update Deployment File
         run: |
           sed -i "s|image: algn48/node-todo:.*|image: algn48/node-todo:${{ needs.get-latest-tag.outputs.new_tag }}|g" k8s/deployment.yaml
@@ -95,6 +81,6 @@ jobs:
       - name: Send failure notification to Teams
         uses: 8398a7/action-slack@v3
         with:
-   #       status: failure
+          # status: failure
           teams_webhook_url: ${{ secrets.TEAMS_WEBHOOK_URL }}
           text: "❌ The GitHub Actions workflow has failed. Please check the logs and address the issue."
