@@ -37,7 +37,6 @@ jobs:
           LATEST_TAG=$(curl -s "https://hub.docker.com/v2/repositories/algn48/node-todo/tags/?page_size=1" | jq -r '.results[0].name' | grep -Eo '[0-9]+' || echo 0)
           NEW_TAG=$((LATEST_TAG + 1))
           echo "new_tag=$NEW_TAG" >> $GITHUB_ENV
-...
       - name: Push Image to Docker Hub
         run: |
           docker ps -a
