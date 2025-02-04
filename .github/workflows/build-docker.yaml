@@ -226,7 +226,10 @@ jobs:
     if: always()
     steps:
       - name: Generate MegaLinter Report URL
-        run: echo "LINTER_REPORT_URL=https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts" >> $GITHUB_ENV
+        id: report_url
+        run: |
+          ARTIFACT_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts"
+          echo "LINTER_REPORT_URL=${ARTIFACT_URL}" >> $GITHUB_ENV
 
       - name: Send Teams Notification on Success
         if: success()
