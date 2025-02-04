@@ -29,7 +29,8 @@ jobs:
 
       - name: Build Docker Image
         run: |
-          docker build -t algn48/node-todo:latest -t algn48/node-todo:${{ needs.get-latest-tag.outputs.new_tag }} .
+          docker build -t algn48/node-todo:latest .
+          docker ps -a
 
   push-image:
     runs-on: ubuntu-latest
@@ -44,6 +45,7 @@ jobs:
           NEW_TAG=$((LATEST_TAG + 1))
       - name: Push Image to Docker Hub
         run: |
+          docker ps -a
           docker push algn48/node-todo:$NEW_TAG
 
   generate-summary:
