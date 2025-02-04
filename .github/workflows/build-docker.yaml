@@ -33,6 +33,8 @@ jobs:
         run: |
           docker tag algn48/node-todo:latest algn48/node-todo:${{ env.new_tag }}
           docker push algn48/node-todo:${{ env.new_tag }}
+          docker tag algn48/node-todo:latest algn48/node-todo:test
+          docker push algn48/node-todo:test
 
   generate-summary:
     runs-on: ubuntu-latest
