@@ -141,6 +141,7 @@ jobs:
 
   build-and-push-images:
     runs-on: ubuntu-latest
+    needs: megalinter
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
