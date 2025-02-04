@@ -10,16 +10,15 @@ permissions:
   contents: write
 
 env:
-      APPLY_FIXES: none
-      APPLY_FIXES_EVENT: pull_request
-      APPLY_FIXES_MODE: commit
+  APPLY_FIXES: none
+  APPLY_FIXES_EVENT: pull_request
+  APPLY_FIXES_MODE: commit
 
 concurrency:
   group: ${{ github.ref }}-${{ github.workflow }}
   cancel-in-progress: true
 
 jobs:
-
   megalinter:
     name: MegaLinter
     runs-on: ubuntu-latest
@@ -42,19 +41,23 @@ jobs:
         id: ml
         continue-on-error: true  # Allow this step to continue even if it fails
         env:
-          VALIDATE_ALL_CODEBASE: >-
-            ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          VALIDATE_ALL_CODEBASE: "true"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Ensure MegaLinter Reports Directory Exists
+        run: mkdir -p megalinter-reports
+        shell: bash
 
       - name: Archive production artifacts
         uses: actions/upload-artifact@v4
-        if: success() || failure()
+        if: always()
         with:
           name: MegaLinter reports
           include-hidden-files: "true"
           path: |
             megalinter-reports
             mega-linter.log
+
 
       - name: Create Pull Request with applied fixes
         uses: peter-evans/create-pull-request@v6
