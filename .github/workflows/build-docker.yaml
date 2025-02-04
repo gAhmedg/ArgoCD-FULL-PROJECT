@@ -19,16 +19,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  pre-pull-image:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Pull MegaLinter image
-        run: docker pull oxsecurity/megalinter:v8.4.2
-
   megalinter:
     name: MegaLinter
     runs-on: ubuntu-latest
-    needs: pre-pull-image
     continue-on-error: true  # Allow job to continue even if there is an error
 
     permissions:
@@ -43,7 +36,7 @@ jobs:
           token: ${{ secrets.PAT || secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
-      - name: Run MegaLinter
+      - name: MegaLinter
         uses: oxsecurity/megalinter@v8
         id: ml
         continue-on-error: true  # Allow this step to continue even if it fails
@@ -64,6 +57,7 @@ jobs:
           path: |
             megalinter-reports
             mega-linter.log
+
 
       - name: Create Pull Request with applied fixes
         uses: peter-evans/create-pull-request@v6
@@ -145,23 +139,15 @@ jobs:
           commit_user_name: megalinter-bot
           commit_user_email: nicolas.vuillamy@ox.security
 
+
+
+
   build-and-push-images:
     runs-on: ubuntu-latest
     needs: megalinter
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Enable Docker BuildKit
-        run: echo '{"experimental":true}' > ~/.docker/config.json
-
-      - name: Cache Docker layers
-        uses: actions/cache@v3
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-docker-${{ hashFiles('**/Dockerfile') }}
-          restore-keys: |
-            ${{ runner.os }}-docker-
 
       - name: Build Docker Image
         run: |
@@ -192,7 +178,6 @@ jobs:
           LATEST_TAG=$(curl -s "https://hub.docker.com/v2/repositories/algn48/node-todo/tags/?page_size=1" | jq -r '.results[0].name' | grep -Eo '[0-9]+' || echo 0)
           NEW_TAG=$((LATEST_TAG ))
           echo "new_tag=$NEW_TAG" >> $GITHUB_ENV
-
       - name: Create Summary for GitHub Actions
         run: |
           echo "## ✅ Docker Image Built and Pushed Successfully" >> $GITHUB_STEP_SUMMARY
@@ -249,7 +234,7 @@ jobs:
             "summary": "GitHub Actions Workflow Completed",
             "themeColor": "00FF00",
             "title": "✅ Build & Deployment Successful",
-            "text": "**Repository:** algn48/node-todo\n**New Tag:** ${{ env.new_tag }}\n[View Docker Hub](https://hub.docker.com/r/algn48/node-todo)"
+            "text": "**Repository:** algn48/node-todo\n**New Tag:** ${{ env.new_tag }}\n**Triggered by:** ${{ github.actor }}\n[View Docker Hub](https://hub.docker.com/r/algn48/node-todo)"
           }' ${{ secrets.TEAMS_WEBHOOK_URL }}
 
       - name: Send Teams Notification on Failure
@@ -258,4 +243,8 @@ jobs:
           curl -H 'Content-Type: application/json' -d '{
             "@type": "MessageCard",
             "@context": "https://schema.org/extensions",
-            "summary": "Git
+            "summary": "GitHub Actions Workflow Failed",
+            "themeColor": "FF0000",
+            "title": "❌ Build & Deployment Failed",
+            "text": "Check GitHub Actions for details.\n**Triggered by:** ${{ github.actor }}"
+          }' ${{ secrets.TEAMS_WEBHOOK_URL }}
