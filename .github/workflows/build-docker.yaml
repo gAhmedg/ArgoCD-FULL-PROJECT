@@ -78,4 +78,4 @@ jobs:
           cd target-repo
           git add k8s/deployment.yaml
           git commit -m "Updated deployment with new image tag: ${{ env.new_tag }}"
-          git push https://gAhmedg:${GH_TOKEN}@github.com/gAhmedg/argocd-example-apps.git main
+          git push https://gAhmedg:${GH_TOKEN}@github.com/gAhmedg/argocd-example-apps.git main 
