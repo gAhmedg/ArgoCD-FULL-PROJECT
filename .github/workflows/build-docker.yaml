@@ -81,3 +81,73 @@ jobs:
           git add k8s/deployment.yaml
           git commit -m "Updated deployment with new image tag: ${{ env.new_tag }}"
           git push https://gAhmedg:${GH_TOKEN}@github.com/gAhmedg/argocd-example-apps.git main 
+
+
+
+
+
+
+
+ update-argocd:
+    runs-on: ubuntu-latest
+    needs: build-and-push-images
+    steps:
+      - name: Clone Target Repository (`argocd-example-apps`)
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          git clone https://gAhmedg:${GH_TOKEN}@github.com/gAhmedg/argocd-example-apps.git target-repo
+          cd target-repo
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+
+      - name: Get Latest Tag from Docker Hub and Increment
+        id: get_tag
+        run: |
+          LATEST_TAG=$(curl -s "https://hub.docker.com/v2/repositories/algn48/node-todo/tags/?page_size=1" | jq -r '.results[0].name' | grep -Eo '[0-9]+' || echo 0)
+          NEW_TAG=$((LATEST_TAG + 1))
+          echo "new_tag=$NEW_TAG" >> $GITHUB_ENV
+
+      - name: Update Deployment File in `argocd-example-apps`
+        run: |
+          cd target-repo
+          sed -i "s|image: algn48/node-todo:.*|image: algn48/node-todo:${{ env.new_tag }}|g" k8s/deployment.yaml
+
+      - name: Commit and Push Changes to `argocd-example-apps`
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          cd target-repo
+          git add k8s/deployment.yaml
+          git commit -m "Updated deployment with new image tag: ${{ env.new_tag }}"
+          git push https://gAhmedg:${GH_TOKEN}@github.com/gAhmedg/argocd-example-apps.git main
+
+  notify-teams:
+    runs-on: ubuntu-latest
+    needs: [build-and-push-images, update-argocd]
+    if: always()
+    steps:
+      - name: Send Teams Notification on Success
+        if: success()
+        run: |
+          curl -H 'Content-Type: application/json' -d '{
+            "@type": "MessageCard",
+            "@context": "https://schema.org/extensions",
+            "summary": "GitHub Actions Workflow Completed",
+            "themeColor": "00FF00",
+            "title": "✅ Build & Deployment Successful",
+            "text": "**Repository:** algn48/node-todo\n**New Tag:** ${{ env.new_tag }}\n[View Docker Hub](https://hub.docker.com/r/algn48/node-todo)"
+          }' ${{ secrets.TEAMS_WEBHOOK_URL }}
+
+      - name: Send Teams Notification on Failure
+        if: failure()
+        run: |
+          curl -H 'Content-Type: application/json' -d '{
+            "@type": "MessageCard",
+            "@context": "https://schema.org/extensions",
+            "summary": "GitHub Actions Workflow Failed",
+            "themeColor": "FF0000",
+            "title": "❌ Build & Deployment Failed",
+            "text": "Check GitHub Actions for details."
+          }' ${{ secrets.TEAMS_WEBHOOK_URL }}
+         
