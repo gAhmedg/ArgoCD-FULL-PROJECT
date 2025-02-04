@@ -50,16 +50,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Get Latest Tag from Docker Hub and Increment
-        id: get_tag
-        run: |
-          LATEST_TAG=$(curl -s "https://hub.docker.com/v2/repositories/algn48/node-todo/tags/?page_size=1" | jq -r '.results[0].name' | grep -Eo '[0-9]+' || echo 0)
-          NEW_TAG=$((LATEST_TAG + 1))
-          echo "new_tag=$NEW_TAG" >> $GITHUB_ENV
+      
       - name: Update Deployment File
         run: |
           sed -i "s|image: algn48/node-todo:.*|image: algn48/node-todo:${{ env.new_tag }}|g" k8s/deployment.yaml
-
       - name: Commit and Push Changes
         run: |
           git config --global user.name "github-actions"
