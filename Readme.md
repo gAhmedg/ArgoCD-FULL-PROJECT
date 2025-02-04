@@ -3,6 +3,8 @@
 ## 📌 Overview
 This repository automates the CI/CD pipeline for the **Node.js Todo App** using **GitHub Actions, Docker, Kubernetes, and ArgoCD**. The workflow builds and pushes the application Docker image to Docker Hub, updates the ArgoCD repository, and triggers a deployment.
 
+![alt text](<repo/tt.svg>)
+
 ## 🔧 Technologies Used
 - **GitHub Actions** – Automates build and deployment.
 - **Docker** – Containerizes the application.
@@ -11,7 +13,6 @@ This repository automates the CI/CD pipeline for the **Node.js Todo App** using 
 - **MySQL** – Stores application data.
 - **Microsoft Teams** – Sends deployment notifications.
 
-![alt text](<repo/tt.svg>)
 
 
 ## 🏗️ CI/CD Workflow
