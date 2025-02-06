@@ -250,7 +250,7 @@ jobs:
             "summary": "GitHub Actions Workflow Completed",
             "themeColor": "00FF00",
             "title": "✅ Build & Deployment Successful",
-            "text": "**Repository:** ${{ github.repository }}\n**New Tag:** ${{ env.new_tag }}\n**Triggered by:** ${{ github.actor }}\n[🔗 Download MegaLinter Report](${{ env.ARTIFACT_URL }})"
+            "text": "**Repository:** ${{ github.repository }}\n**New Tag:** ${{ env.new_tag }}\n**Triggered by:** ${{ github.actor }}\n[View Docker Hub](https://hub.docker.com/r/algn48/node-todo) \n[🔗 Download MegaLinter Report](${{ env.ARTIFACT_URL }})"
           }' ${{ secrets.TEAMS_WEBHOOK_URL }}
 
       - name: Send Teams Notification on Failure
