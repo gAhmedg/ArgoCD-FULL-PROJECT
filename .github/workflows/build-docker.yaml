@@ -220,11 +220,19 @@ jobs:
           git commit -m "Updated deployment with new image tag: ${{ env.new_tag }}"
           git push https://gAhmedg:${GH_TOKEN}@github.com/gAhmedg/argocd-example-apps.git main
 
+          
   notify-teams:
     runs-on: ubuntu-latest
     needs: [build-and-push-images, update-argocd]
     if: always()
     steps:
+
+
+      - name: Read MegaLinter Report
+        run: |
+          REPORT_CONTENT=$(head -n 30 megalinter-reports/mega-linter.log | jq -Rs .)
+          echo "REPORT=$REPORT_CONTENT" >> $GITHUB_ENV
+
       - name: Send Teams Notification on Success
         if: success()
         run: |
@@ -246,6 +254,6 @@ jobs:
             "summary": "GitHub Actions Workflow Failed",
             "themeColor": "FF0000",
             "title": "❌ Build & Deployment Failed",
-            "text": "Check GitHub Actions for details.\n**Triggered by:** ${{ github.actor }}"
+            "text": "Check GitHub Actions for details.\n**Triggered by:** ${{ github.actor }}\n\n**MegaLinter Report:**\n```${{ env.REPORT }}```"
           }' ${{ secrets.TEAMS_WEBHOOK_URL }}
         
