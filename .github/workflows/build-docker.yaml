@@ -227,10 +227,19 @@ jobs:
     if: always()
     steps:
 
-
-      - name: Generate Artifact Link
+      - name: Get Artifact ID
         run: |
-          echo "ARTIFACT_URL=https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts" >> $GITHUB_ENV
+          ARTIFACT_ID=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts" | 
+            jq -r '.artifacts[] | select(.name=="MegaLinter reports") | .id')
+
+          if [[ -n "$ARTIFACT_ID" ]]; then
+            echo "ARTIFACT_URL=https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts/$ARTIFACT_ID" >> $GITHUB_ENV
+          else
+            echo "Artifact ID not found!"
+            exit 1
+          fi
 
       - name: Send Teams Notification on Success
         if: success()
@@ -255,3 +264,29 @@ jobs:
             "title": "❌ Build & Deployment Failed",
             "text": "Check GitHub Actions for details.\n**Triggered by:** ${{ github.actor }}\n\n[🔗 Download MegaLinter Report](${{ env.ARTIFACT_URL }})"
           }' ${{ secrets.TEAMS_WEBHOOK_URL }}
+
+
+      # - name: Send Teams Notification on Success
+      #   if: success()
+      #   run: |
+      #     curl -H 'Content-Type: application/json' -d '{
+      #       "@type": "MessageCard",
+      #       "@context": "https://schema.org/extensions",
+      #       "summary": "GitHub Actions Workflow Completed",
+      #       "themeColor": "00FF00",
+      #       "title": "✅ Build & Deployment Successful",
+      #       "text": "**Repository:** algn48/node-todo\n**New Tag:** ${{ env.new_tag }}\n**Triggered by:** ${{ github.actor }}\n[View Docker Hub](https://hub.docker.com/r/algn48/node-todo)"
+      #     }' ${{ secrets.TEAMS_WEBHOOK_URL }}
+
+      # - name: Send Teams Notification on Failure
+      #   if: failure()
+      #   run: |
+      #     curl -H 'Content-Type: application/json' -d '{
+      #       "@type": "MessageCard",
+      #       "@context": "https://schema.org/extensions",
+      #       "summary": "GitHub Actions Workflow Failed",
+      #       "themeColor": "FF0000",
+      #       "title": "❌ Build & Deployment Failed",
+      #       "text": "Check GitHub Actions for details.\n**Triggered by:** ${{ github.actor }}"
+      #     }' ${{ secrets.TEAMS_WEBHOOK_URL }}
+        
