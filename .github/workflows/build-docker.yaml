@@ -228,10 +228,9 @@ jobs:
     steps:
 
 
-      - name: Read MegaLinter Report
+      - name: Generate Artifact Link
         run: |
-          REPORT_CONTENT=$(head -n 30 megalinter-reports/mega-linter.log | jq -Rs .)
-          echo "REPORT=$REPORT_CONTENT" >> $GITHUB_ENV
+          echo "ARTIFACT_URL=https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts" >> $GITHUB_ENV
 
       - name: Send Teams Notification on Success
         if: success()
@@ -242,7 +241,7 @@ jobs:
             "summary": "GitHub Actions Workflow Completed",
             "themeColor": "00FF00",
             "title": "✅ Build & Deployment Successful",
-            "text": "**Repository:** algn48/node-todo\n**New Tag:** ${{ env.new_tag }}\n**Triggered by:** ${{ github.actor }}\n[View Docker Hub](https://hub.docker.com/r/algn48/node-todo)"
+            "text": "**Repository:** ${{ github.repository }}\n**New Tag:** ${{ env.new_tag }}\n**Triggered by:** ${{ github.actor }}\n[🔗 Download MegaLinter Report](${{ env.ARTIFACT_URL }})"
           }' ${{ secrets.TEAMS_WEBHOOK_URL }}
 
       - name: Send Teams Notification on Failure
@@ -254,6 +253,5 @@ jobs:
             "summary": "GitHub Actions Workflow Failed",
             "themeColor": "FF0000",
             "title": "❌ Build & Deployment Failed",
-            "text": "Check GitHub Actions for details.\n**Triggered by:** ${{ github.actor }}\n\n**MegaLinter Report:**\n```${{ env.REPORT }}```"
+            "text": "Check GitHub Actions for details.\n**Triggered by:** ${{ github.actor }}\n\n[🔗 Download MegaLinter Report](${{ env.ARTIFACT_URL }})"
           }' ${{ secrets.TEAMS_WEBHOOK_URL }}
-        
