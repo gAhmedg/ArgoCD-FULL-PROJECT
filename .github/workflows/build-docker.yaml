@@ -6,7 +6,7 @@ on:
     branches:
       - main
       - ahmedHamada
-      - dev-tset
+      - dev-test
 
       
 permissions:
