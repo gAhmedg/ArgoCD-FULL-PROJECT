@@ -1,6 +1,6 @@
 name: Build and Publish Image to Docker Hub
 
-#hash
+#hash comment
 on:
   push:
     branches:
