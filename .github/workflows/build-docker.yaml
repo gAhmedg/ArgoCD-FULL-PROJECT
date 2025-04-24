@@ -88,7 +88,6 @@ jobs:
 
   notify-teams:
     runs-on: ubuntu-latest
-    needs: [ build-and-push-images, update-argocd ]
     if: ${{ success() && needs.build-and-push-images.result == 'success' && needs.update-argocd.result == 'success' }}
     steps:
     - name: Send Teams Notification on Success
