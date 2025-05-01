@@ -17,7 +17,7 @@ jobs:
 
     - name: Build Docker Image
       run: |
-        docker build -t aalgn48/node-todo:latest .  
+        docker build -t algn48/node-todo:latest .  
 
     - name: Login to Docker Hub
       run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "algn48" --password-stdin
