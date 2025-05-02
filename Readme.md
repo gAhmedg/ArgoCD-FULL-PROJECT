@@ -1,9 +1,11 @@
 # 🚀 Node.js Todo App with CI/CD using GitHub Actions & ArgoCD
 
 ## 📌 Overview
-This repository automates the CI/CD pipeline for the **Node.js Todo App** using **GitHub Actions, Docker, Kubernetes, and ArgoCD**. The workflow builds and pushes the application Docker image to Docker Hub, updates the ArgoCD repository, and triggers a deployment.
 
-![alt text](<repo/tt.svg>)
+
+This repository automates the **CI/CD pipeline** for the **Node.js Todo App** using **GitHub Actions, Docker, Kubernetes, ArgoCD, and Sealed Secrets**. The workflow builds and pushes the application Docker image to Docker Hub, encrypts sensitive data with the kubeseal CLI, updates the ArgoCD GitOps repo with the latest Deployment and SealedSecret manifests, triggers a deployment, and sends success or failure alerts to **Microsoft Teams** via an incoming webhook.
+
+![alt text](<repo/sealed.svg>)
 
 ## 🔧 Technologies Used
 - **GitHub Actions** – Automates build and deployment.
@@ -12,8 +14,17 @@ This repository automates the CI/CD pipeline for the **Node.js Todo App** using 
 - **ArgoCD** – Implements GitOps for continuous deployment.
 - **MySQL** – Stores application data.
 - **Microsoft Teams** – Sends deployment notifications.
+- **Bitnami Sealed Secrets** for secure secret management
+- **Sealed secret encryption using `kubeseal` CLI**
 
+## 🔐 Secure Secret Management
 
+To ensure Kubernetes secrets are not exposed in the Git repository, this project uses:
+
+- **Sealed Secrets Controller** (installed in the Kubernetes cluster)
+- `kubeseal` CLI to encrypt secrets
+- Encrypted `SealedSecret` files committed to the GitOps repo
+- ArgoCD automatically decrypts secrets during deployment
 
 ## 🏗️ CI/CD Workflow
 The GitHub Actions workflow consists of four jobs:
@@ -62,9 +73,13 @@ In your GitHub repository settings, add the following **secrets**:
 ```
 CD-REPO
 📦 argocd
-├── 📂 k8s                 # Kubernetes manifests
-│   ├── deployment.yaml    # Kubernetes deployment definition
-│   ├── service.yaml       # Kubernetes service definition
+├── 📂 k8s-sealedsecret         # Kubernetes manifests
+│   ├── deployment.yaml                 # Kubernetes deployment definition
+│   ├── my-sealed-secret-app.yaml       # Encrypted secret for the application
+│   ├── my-sealed-secret-db.yaml        # Encrypted secret for the database
+│   ├── mysql.yaml                      # MySQL Deployment and Service
+
+
 
 ```
 ```
@@ -82,7 +97,8 @@ CI-REPO
 ├── 📂 src # Source code
 ├── 📄 yarn.lock # Dependency lock file
 ```
-## 🎯 ArgoCD Deployment File Example (`k8s/deployment.yaml`)
+## 🎯 ArgoCD Deployment File Example (`argocd-example-apps/k8s-sealedsecret`)
+
 ```yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -112,10 +128,21 @@ spec:
 - **Check Logs:** `kubectl logs -f <pod-name>`
 - **Teams Notification:** Alerts for success/failure
 
-## 📜 License
-This project is licensed under the **MIT License**.
+### 📷 CI/CD Pipeline Screenshot
+
+![CI/CD Pipeline Screenshot](repo/image.png)
 
 ---
+
+### 📢 Microsoft Teams Notifications
+
+This project integrates **Microsoft Teams** notifications to report the status of CI/CD pipelines.
+
+- ✅ **Success Alerts**: Sent when a pipeline or deployment completes successfully.
+- ❌ **Failure Alerts**: Sent when a job or step fails.
+- 🔄 Triggered from GitHub Actions via an **Incoming Webhook URL** configured in the Teams channel.
+![teams Screenshot](repo/teams.png)
+
 
 ### 🔗 References
 - [GitHub Actions Documentation](https://docs.github.com/en/actions)
