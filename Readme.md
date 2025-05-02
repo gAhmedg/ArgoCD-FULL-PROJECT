@@ -5,7 +5,7 @@
 
 This repository automates the **CI/CD pipeline** for the **Node.js Todo App** using **GitHub Actions, Docker, Kubernetes, ArgoCD, and Sealed Secrets**. The workflow builds and pushes the application Docker image to Docker Hub, encrypts sensitive data with the kubeseal CLI, updates the ArgoCD GitOps repo with the latest Deployment and SealedSecret manifests, triggers a deployment, and sends success or failure alerts to **Microsoft Teams** via an incoming webhook.
 
-![alt text](<repo/sealed.svg>)
+![alt text](<repo/1.svg>)
 
 ## 🔧 Technologies Used
 - **GitHub Actions** – Automates build and deployment.
